@@ -1,35 +1,81 @@
+const userModel = require("../models/userModel");
 
+const jwt = require("jsonwebtoken");
 
-const userModel = require("../models/userModel")
+const userRegistration = async (req, res) => {
+  const data = req.body;
 
+  let { name, email, password, role } = data;
 
+  if (!name) {
+    return res.status(400).send({ status: false, message: "name is required" });
+  }
 
+  if (!email) {
+    return res
+      .status(400)
+      .send({ status: false, message: "email is required" });
+  }
 
+  const emailExist = await userModel.findOne({ email: email });
 
-const userRegistration = async (req,res)=>{
+  if (emailExist) {
+    return res
+      .status(400)
+      .send({ status: false, message: "this email is already exist" });
+  }
 
-    const data = req.body
+  if (!password) {
+    return res
+      .status(400)
+      .send({ status: false, message: "password is required" });
+  }
 
-    let {name, email, password, role }= data
+  if (!role) {
+    return res.status(400).send({ status: false, message: "role is required" });
+  }
 
-if(!name){return res.status(400).send({status:false, message: "name is required"})}
+  if (!["admin", "student"].includes(role)) {
+    return res
+      .status(400)
+      .send({ status: false, message: "register as a Admin /Student" });
+  }
 
-if(!email){return res.status(400).send({status:false, message: "email is required" })}
+  const userData = await userModel.create(data);
 
-const emailExist = await userModel.findOne({email:email})
+  res.status(201).send({ status: true, data: userData });
+};
 
-if(emailExist){return res.status(400).send({status:false, message:"this email is already exist"})}
+const logIn = async (req, res) => {
+  const data = req.body;
+  const { email, password } = data;
 
-if(!password){return res.status(400).send({status:false, message: "password is required" })}
+  if (!email) {
+    return res
+      .status(400)
+      .send({ status: false, message: "email is required" });
+  }
 
-if(!role){return res.status(400).send({status:false, message:  "role is required"})}
+  if (!password) {
+    return res
+      .status(400)
+      .send({ status: false, message: "password is required" });
+  }
 
-if(!["admin", "student"].includes(role)){return res.status(400).send({status:false, message:"register as a Admin /Student"})}
+  const emailPassCheck = await userModel.findOne({ email: email });
+  if (!emailPassCheck) {
+    return res.status(400).send({ status: false, message: "Invaild email" });
+  }
 
-const userData = await userModel.create(data)
+  if (emailPassCheck.password != password) {
+    return res
+      .status(400)
+      .send({ status: false, message: "Incorrect password" });
+  }
 
-res.status(201).send({status:true , data:userData})
+ let token = jwt.sign({userId:emailPassCheck._id}, "secrateKey")
 
-}
+res.status(201).send({status:true , message:"successfully logIn", token:token})
+};
 
-module.exports = {userRegistration}
+module.exports = { userRegistration, logIn };
