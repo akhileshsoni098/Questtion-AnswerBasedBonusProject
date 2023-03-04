@@ -5,12 +5,13 @@ const router = express.Router()
 
 const userController = require("../controller/userController")
 
+const aws = require("../middi/aws")
 
 router.post("/register" , userController.userRegistration )
 router.post("/logIn" , userController.logIn )
-// router.get("/hello", (req, res)=>{
-// res.send({status:true , message: " hii there Akhilesh Soni Here"})
-// })
+router.post("/question/:userId",aws.awsLink,  userController.createQuestion )
+router.put("/updateQ/:questionId/:userId",aws.awsLink,  userController.updateQuestions )
+router.get("/getQues/:userId",userController.AdminAndStudentGetQues )
 
 
 module.exports = router

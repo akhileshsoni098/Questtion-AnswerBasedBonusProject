@@ -1,5 +1,5 @@
 const userModel = require("../models/userModel");
-
+const questionModel = require("../models/questionModel");
 const jwt = require("jsonwebtoken");
 
 const userRegistration = async (req, res) => {
@@ -73,9 +73,170 @@ const logIn = async (req, res) => {
       .send({ status: false, message: "Incorrect password" });
   }
 
- let token = jwt.sign({userId:emailPassCheck._id}, "secrateKey")
+  let token = jwt.sign({ userId: emailPassCheck._id }, "secrateKey");
 
-res.status(201).send({status:true , message:"successfully logIn", token:token})
+  res
+    .status(201)
+    .send({ status: true, message: "successfully logIn", token: token });
 };
 
-module.exports = { userRegistration, logIn };
+const createQuestion = async (req, res) => {
+  const userId = req.params.userId; // authorization part me admin hoga tabhi create kr sktta h nhi toh nhi userId.role se check krenge
+  const adminCheck = await userModel.findOne({ _id: userId });
+  if (adminCheck.role != "admin") {
+    return res.status(403).send({
+      status: false,
+      message: " you don't have access of this feature",
+    });
+  }
+  let data = req.body;
+  let {
+    question,
+    options,
+    answer,
+    difficulty,
+    selectedOption,
+    image,
+    createdBy,
+  } = data;
+  if (!question) {
+    return res
+      .status(400)
+      .send({ status: false, message: "question is mandatory" });
+  }
+
+  if (!options) {
+    return res
+      .status(400)
+      .send({ status: false, message: "options is mandatory" });
+  }
+  if (!answer) {
+    return res
+      .status(400)
+      .send({ status: false, message: "answer is mandatory" });
+  }
+
+  if (!difficulty) {
+    return res
+      .status(400)
+      .send({ status: false, message: "difficulty is mandatory" });
+  }
+  if (!["easy", "medium", "hard"].includes(difficulty)) {
+    return res
+      .status(400)
+      .send({ status: false, message: "difficulty is mandatory" });
+  }
+
+  createdBy = data.createdBy = userId;
+
+  image = data.image = req.image;
+
+  const saveQues = await questionModel.create(data);
+
+  res.status(201).send({ status: false, data: saveQues });
+};
+
+const updateQuestions = async (req, res) => {
+  const questionId = req.params.questionId;
+  const userId = req.params.userId; // authorization part me admin hoga tabhi create kr sktta h nhi toh nhi userId.role se check krenge
+
+  const adminCheck = await userModel.findOne({ _id: userId });
+
+  if (!adminCheck) {
+    return res.status(400).send({ status: false, message: " user not exist" });
+  }
+  if (adminCheck.role == "student") {
+    return res.status(403).send({
+      status: false,
+      message: " you don't have access of this feature",
+    });
+  }
+
+  let data = req.body;
+  let {
+    question,
+    options,
+    answer,
+    difficulty,
+    selectedOption,
+    image,
+    createdBy,
+  } = data;
+
+  if (difficulty) {
+    if (!["easy", "medium", "hard"].includes(difficulty)) {
+      return res
+        .status(400)
+        .send({ status: false, message: "difficulty is mandatory" });
+    }
+  }
+
+  createdBy = data.createdBy = userId;
+
+  image = data.image = req.image;
+
+  // if (question || options || answer || difficulty|| image){
+
+  let updateQue = await questionModel.findOneAndUpdate(
+    { _id: questionId },
+    {
+      $set: {
+        question: data.question,
+        options: options,
+        answer: data.answer,
+        difficulty: data.difficulty,
+        image: image,
+      },
+    },
+    { new: true }
+  );
+
+  res.status(200).send({ status: true, message: updateQue });
+};
+// }
+
+
+
+
+
+const AdminAndStudentGetQues = async (req, res) => {
+  const userId = req.params.userId;
+
+  let checkUser = await userModel.findById(userId);
+  if (!checkUser) {
+    return res
+      .status(400)
+      .send({ status: false, message: "User doesn't exist" });
+  }
+ 
+
+  //want to hide some data for student ...
+ 
+  if (checkUser.role == "student") {
+    let getDatastudent  = await questionModel.find().select({question:1 ,options:1,difficulty:1,image:1,createdBy:1})
+
+    return res
+      .status(200)
+      .send({
+        status: true,
+        data: getDatastudent
+      });
+  }
+
+
+  let getDataAdmin = await questionModel.find()
+if(checkUser.role == "admin") {
+  
+  res.status(200).send({status:false , data: getDataAdmin})
+}
+};
+
+
+// answer wala krna h then done .......
+
+
+
+
+
+
+module.exports = { userRegistration, logIn, createQuestion, updateQuestions,AdminAndStudentGetQues };
