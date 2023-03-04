@@ -209,15 +209,13 @@ const AdminAndStudentGetQues = async (req, res) => {
   //want to hide some data for student ...
 
   if (checkUser.role == "student") {
-    let getDatastudent = await questionModel
-      .find()
-      .select({
-        question: 1,
-        options: 1,
-        difficulty: 1,
-        image: 1,
-        createdBy: 1,
-      });
+    let getDatastudent = await questionModel.find().select({
+      question: 1,
+      options: 1,
+      difficulty: 1,
+      image: 1,
+      createdBy: 1,
+    });
 
     return res.status(200).send({
       status: true,
@@ -230,9 +228,6 @@ const AdminAndStudentGetQues = async (req, res) => {
     res.status(200).send({ status: false, data: getDataAdmin });
   }
 };
-
-
-
 
 const anwserData = async (req, res) => {
   const questionId = req.params.questionId;
@@ -252,29 +247,31 @@ const anwserData = async (req, res) => {
 
   let data = req.body;
   let { question, selectedOption, answeredBy } = data;
- 
-  let query = await questionModel.findByIdAndUpdate({_id:questionId})
-  
- if (selectedOption) {
 
-    question = questionId
-    answeredBy = userId
-let saveData = await answerModel.create(data)
+  let query = await questionModel.findByIdAndUpdate({ _id: questionId });
 
-if(saveData.selectedOption==query.answer){
+  if (selectedOption) {
+    question = questionId;
+    answeredBy = userId;
+    let saveData = await answerModel.create(data);
 
- let answerUpdate= await answerModel.findOneAndUpdate({_id:saveData._id, isCorrect:false},{ isCorrect:true},{new:true})
+    if (saveData.selectedOption == query.answer) {
+      let answerUpdate = await answerModel.findOneAndUpdate(
+        { _id: saveData._id, isCorrect: false },
+        { isCorrect: true },
+        { new: true }
+      );
 
-res.status(201).send({status:true, data:answerUpdate})
-}
+      res.status(201).send({ status: true, data: answerUpdate });
+    }
   }
-}
+};
 
 module.exports = {
   userRegistration,
   logIn,
   createQuestion,
   updateQuestions,
-  AdminAndStudentGetQues,anwserData
+  AdminAndStudentGetQues,
+  anwserData,
 };
- 
