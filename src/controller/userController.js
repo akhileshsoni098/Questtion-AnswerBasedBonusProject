@@ -1,6 +1,7 @@
 const userModel = require("../models/userModel");
 const questionModel = require("../models/questionModel");
 const jwt = require("jsonwebtoken");
+const answerModel = require("../models/answerModel");
 
 const userRegistration = async (req, res) => {
   const data = req.body;
@@ -195,10 +196,6 @@ const updateQuestions = async (req, res) => {
 };
 // }
 
-
-
-
-
 const AdminAndStudentGetQues = async (req, res) => {
   const userId = req.params.userId;
 
@@ -208,35 +205,76 @@ const AdminAndStudentGetQues = async (req, res) => {
       .status(400)
       .send({ status: false, message: "User doesn't exist" });
   }
- 
 
   //want to hide some data for student ...
- 
-  if (checkUser.role == "student") {
-    let getDatastudent  = await questionModel.find().select({question:1 ,options:1,difficulty:1,image:1,createdBy:1})
 
-    return res
-      .status(200)
-      .send({
-        status: true,
-        data: getDatastudent
+  if (checkUser.role == "student") {
+    let getDatastudent = await questionModel
+      .find()
+      .select({
+        question: 1,
+        options: 1,
+        difficulty: 1,
+        image: 1,
+        createdBy: 1,
       });
+
+    return res.status(200).send({
+      status: true,
+      data: getDatastudent,
+    });
   }
 
-
-  let getDataAdmin = await questionModel.find()
-if(checkUser.role == "admin") {
-  
-  res.status(200).send({status:false , data: getDataAdmin})
-}
+  let getDataAdmin = await questionModel.find();
+  if (checkUser.role == "admin") {
+    res.status(200).send({ status: false, data: getDataAdmin });
+  }
 };
 
 
-// answer wala krna h then done .......
 
 
+const anwserData = async (req, res) => {
+  const questionId = req.params.questionId;
+  const userId = req.params.userId;
 
+  const userdata = await userModel.findById(userId);
+  if (!userdata) {
+    return res
+      .status(400)
+      .send({ status: false, message: "user does not exist" });
+  }
+  if (userdata.role == "admin") {
+    return res
+      .status(400)
+      .send({ status: false, message: "Only Student can answer " });
+  }
 
+  let data = req.body;
+  let { question, selectedOption, answeredBy } = data;
+ 
+  let query = await questionModel.findByIdAndUpdate({_id:questionId})
+  
+ if (selectedOption) {
 
+    question = questionId
+    answeredBy = userId
+let saveData = await answerModel.create(data)
 
-module.exports = { userRegistration, logIn, createQuestion, updateQuestions,AdminAndStudentGetQues };
+if(saveData.selectedOption==query.answer){
+
+ let answerUpdate= await answerModel.findOneAndUpdate({_id:saveData._id, isCorrect:false},{ isCorrect:true},{new:true})
+
+res.status(201).send({status:true, data:answerUpdate})
+}
+  }
+}
+
+module.exports = {
+  userRegistration,
+  logIn,
+  createQuestion,
+  updateQuestions,
+  AdminAndStudentGetQues,anwserData
+};
+ 

@@ -12,6 +12,6 @@ router.post("/logIn" , userController.logIn )
 router.post("/question/:userId",aws.awsLink,  userController.createQuestion )
 router.put("/updateQ/:questionId/:userId",aws.awsLink,  userController.updateQuestions )
 router.get("/getQues/:userId",userController.AdminAndStudentGetQues )
-
+router.post("/answer/:questionId/:userId", userController.anwserData)
 
 module.exports = router
