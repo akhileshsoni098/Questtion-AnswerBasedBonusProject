@@ -1,13 +1,26 @@
 const jwt = require("jsonwebtoken")
-const authentication = (req,res)=>{
-let token = req.headers["x-auth-token"]
-jwt.verify(token, "secrateKey", function(decoded,err){
-if(err){
-    res.status(401).send({status:false , message:err.message})
+
+
+
+const authentication = function (req, res, next) {
+    try {
+        const token = req.headers["x-api-key"];
+        if (!token) {
+            return res.status(400).send({ status: false, message: "Header token is required !" });
+        }
+// ================================== verifying token ===========================================================
+        jwt.verify(token, 'secrateKey', function (err, decoded) {
+            if (err) {
+                return res.status(401).send({ message: err.message })
+            }
+            else {
+                req.decodedToken = decoded
+                next()
+            }
+        });
+    } catch (error) {
+        res.status(500).send({ status: false, message: error.message })
+    }
+
 }
-else{
-    req.userId = decoded.userId
-    next()
-}
-})
-}
+module.exports ={authentication}
